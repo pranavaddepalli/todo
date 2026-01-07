@@ -21,9 +21,16 @@
 
         h1 {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 8px;
             color: #333;
             font-weight: 600;
+        }
+
+        .help-text {
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 16px;
         }
 
         .board {
@@ -85,6 +92,8 @@
             min-height: 80px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .card:hover {
@@ -180,11 +189,105 @@
             border-color: #3b82f6;
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
         }
+
+        /* Context Menu */
+        .context-menu {
+            position: fixed;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            padding: 6px 0;
+            min-width: 200px;
+            z-index: 1000;
+            font-size: 14px;
+        }
+
+        .context-menu-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .context-menu-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .context-menu-item.delete {
+            color: #ef4444;
+        }
+
+        .context-menu-item.delete:hover {
+            background-color: #fee2e2;
+        }
+
+        .context-menu-divider {
+            height: 1px;
+            background-color: #e0e0e0;
+            margin: 6px 0;
+        }
+
+        .context-menu-header {
+            padding: 8px 16px;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #888;
+            letter-spacing: 0.5px;
+        }
+
+        .color-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .color-dot.yellow {
+            background-color: #fbbf24;
+        }
+
+        .color-dot.blue {
+            background-color: #3b82f6;
+        }
+
+        .color-dot.red {
+            background-color: #ef4444;
+        }
+
+        .color-dot.green {
+            background-color: #22c55e;
+        }
+
+        /* Drag and Drop styles */
+        .card.dragging {
+            position: fixed;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0.9;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            transform: rotate(2deg);
+            cursor: grabbing;
+        }
+
+        .card-placeholder {
+            border: 2px dashed rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            min-height: 80px;
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .column.drop-target .cards-container {
+            background-color: rgba(0, 0, 0, 0.08);
+            border-radius: 6px;
+            min-height: 100px;
+        }
     </style>
 </head>
 
 <body>
     <h1>Task Tracker</h1>
+    <p class="help-text">💡 Click to edit · Hold to drag · Right-click for options</p>
 
     <div class="board">
         <!-- Column 1: Waiting on Me -->
@@ -221,6 +324,28 @@
     </div>
 
     <script>
+        // Column definitions
+        const columns = {
+            'waiting-on-me': { name: 'Waiting on Me', color: 'yellow' },
+            'waiting-on-others': { name: 'Waiting on Someone Else', color: 'blue' },
+            'blocked': { name: 'Blocked', color: 'red' },
+            'completed': { name: 'Completed', color: 'green' }
+        };
+
+        // Drag state
+        let dragState = {
+            isDragging: false,
+            card: null,
+            placeholder: null,
+            holdTimer: null,
+            startX: 0,
+            startY: 0,
+            offsetX: 0,
+            offsetY: 0
+        };
+
+        const HOLD_DELAY = 100; // ms to hold before drag starts
+
         // Initialize the board
         document.addEventListener('DOMContentLoaded', function () {
             // Add click handlers to "Add Card" buttons
@@ -233,6 +358,13 @@
                     startEditing(card);
                 });
             });
+
+            // Close context menu when clicking elsewhere
+            document.addEventListener('click', hideContextMenu);
+
+            // Global mouse move and up for dragging
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
         });
 
         // Create a new card element
@@ -248,14 +380,203 @@
                 <div class="card-description">${escapeHtml(displayDesc)}</div>
             `;
 
-            // Click to edit
-            card.addEventListener('click', function () {
-                if (!this.classList.contains('editing')) {
+            setupCardInteractions(card);
+            return card;
+        }
+
+        // Setup card interactions (click, right-click, drag)
+        function setupCardInteractions(card) {
+            // Mouse down - start hold timer
+            card.addEventListener('mousedown', function (e) {
+                if (this.classList.contains('editing') || e.button !== 0) return;
+
+                dragState.startX = e.clientX;
+                dragState.startY = e.clientY;
+
+                const rect = this.getBoundingClientRect();
+                dragState.offsetX = e.clientX - rect.left;
+                dragState.offsetY = e.clientY - rect.top;
+
+                const cardRef = this;
+                dragState.holdTimer = setTimeout(() => {
+                    startDragging(cardRef, e);
+                }, HOLD_DELAY);
+            });
+
+            // Click to edit (only if not dragging)
+            card.addEventListener('click', function (e) {
+                if (!this.classList.contains('editing') && !dragState.isDragging) {
                     startEditing(this);
                 }
             });
 
-            return card;
+            // Right-click for context menu
+            card.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+                if (!this.classList.contains('editing')) {
+                    showContextMenu(e, this);
+                }
+            });
+        }
+
+        // Start dragging a card
+        function startDragging(card, e) {
+            if (card.classList.contains('editing')) return;
+
+            dragState.isDragging = true;
+            dragState.card = card;
+
+            // Create placeholder
+            dragState.placeholder = document.createElement('div');
+            dragState.placeholder.className = 'card-placeholder';
+            dragState.placeholder.style.height = card.offsetHeight + 'px';
+            card.parentNode.insertBefore(dragState.placeholder, card);
+
+            // Style the dragging card
+            const rect = card.getBoundingClientRect();
+            card.classList.add('dragging');
+            card.style.width = rect.width + 'px';
+            card.style.left = (e.clientX - dragState.offsetX) + 'px';
+            card.style.top = (e.clientY - dragState.offsetY) + 'px';
+            document.body.appendChild(card);
+        }
+
+        // Handle mouse move for dragging
+        function handleMouseMove(e) {
+            // Cancel hold if mouse moved too much before drag started
+            if (dragState.holdTimer) {
+                const distance = Math.sqrt(
+                    Math.pow(e.clientX - dragState.startX, 2) +
+                    Math.pow(e.clientY - dragState.startY, 2)
+                );
+                if (distance > 5) {
+                    clearTimeout(dragState.holdTimer);
+                    dragState.holdTimer = null;
+                }
+            }
+
+            if (!dragState.isDragging || !dragState.card) return;
+
+            // Move the card
+            dragState.card.style.left = (e.clientX - dragState.offsetX) + 'px';
+            dragState.card.style.top = (e.clientY - dragState.offsetY) + 'px';
+
+            // Highlight drop target column
+            document.querySelectorAll('.column').forEach(col => col.classList.remove('drop-target'));
+            const targetColumn = document.elementFromPoint(e.clientX, e.clientY)?.closest('.column');
+            if (targetColumn) {
+                targetColumn.classList.add('drop-target');
+            }
+        }
+
+        // Handle mouse up - either click or drop
+        function handleMouseUp(e) {
+            // Clear hold timer
+            if (dragState.holdTimer) {
+                clearTimeout(dragState.holdTimer);
+                dragState.holdTimer = null;
+            }
+
+            if (!dragState.isDragging || !dragState.card) return;
+
+            const card = dragState.card;
+            const placeholder = dragState.placeholder;
+
+            // Find drop target
+            card.style.display = 'none';
+            const elementBelow = document.elementFromPoint(e.clientX, e.clientY);
+            card.style.display = '';
+
+            const targetColumn = elementBelow?.closest('.column');
+            const targetContainer = targetColumn?.querySelector('.cards-container');
+
+            // Remove dragging styles
+            card.classList.remove('dragging');
+            card.style.position = '';
+            card.style.left = '';
+            card.style.top = '';
+            card.style.width = '';
+            card.style.zIndex = '';
+
+            if (targetContainer) {
+                targetContainer.appendChild(card);
+            } else if (placeholder.parentNode) {
+                placeholder.parentNode.insertBefore(card, placeholder);
+            }
+
+            // Cleanup
+            placeholder.remove();
+            document.querySelectorAll('.column').forEach(col => col.classList.remove('drop-target'));
+
+            // Reset state
+            dragState.isDragging = false;
+            dragState.card = null;
+            dragState.placeholder = null;
+        }
+
+        // Show context menu
+        function showContextMenu(e, card) {
+            hideContextMenu();
+
+            const currentColumn = card.closest('.column').dataset.column;
+
+            const menu = document.createElement('div');
+            menu.className = 'context-menu';
+            menu.innerHTML = `
+                <div class="context-menu-header">Move to</div>
+                ${Object.entries(columns)
+                    .filter(([key]) => key !== currentColumn)
+                    .map(([key, col]) => `
+                        <div class="context-menu-item" data-action="move" data-column="${key}">
+                            <span class="color-dot ${col.color}"></span>
+                            ${col.name}
+                        </div>
+                    `).join('')}
+                <div class="context-menu-divider"></div>
+                <div class="context-menu-item delete" data-action="delete">
+                    🗑️ Delete
+                </div>
+            `;
+
+            menu.style.left = e.pageX + 'px';
+            menu.style.top = e.pageY + 'px';
+
+            document.body.appendChild(menu);
+
+            // Keep menu in viewport
+            const rect = menu.getBoundingClientRect();
+            if (rect.right > window.innerWidth) {
+                menu.style.left = (window.innerWidth - rect.width - 10) + 'px';
+            }
+            if (rect.bottom > window.innerHeight) {
+                menu.style.top = (window.innerHeight - rect.height - 10) + 'px';
+            }
+
+            // Handle menu clicks
+            menu.addEventListener('click', function (e) {
+                const item = e.target.closest('.context-menu-item');
+                if (!item) return;
+
+                const action = item.dataset.action;
+
+                if (action === 'move') {
+                    const targetColumn = item.dataset.column;
+                    const targetContainer = document.querySelector(`.column[data-column="${targetColumn}"] .cards-container`);
+                    targetContainer.appendChild(card);
+                }
+
+                if (action === 'delete') {
+                    card.remove();
+                }
+
+                hideContextMenu();
+            });
+        }
+
+        // Hide context menu
+        function hideContextMenu() {
+            const existing = document.querySelector('.context-menu');
+            if (existing) existing.remove();
         }
 
         // Start editing a card
@@ -280,12 +601,10 @@
             titleInput.focus();
             titleInput.select();
 
-            // Save on blur (clicking outside)
             function saveCard() {
                 const newTitle = titleInput.value.trim();
                 const newDesc = descInput.value.trim();
 
-                // Remove card if empty
                 if (!newTitle && !newDesc) {
                     card.remove();
                     return;
@@ -297,7 +616,6 @@
                     <div class="card-description">${escapeHtml(newDesc) || ''}</div>
                 `;
 
-                // Re-attach click listener
                 card.addEventListener('click', function () {
                     if (!this.classList.contains('editing')) {
                         startEditing(this);
@@ -305,7 +623,6 @@
                 });
             }
 
-            // Save when clicking outside
             function handleBlur(e) {
                 setTimeout(() => {
                     if (!card.contains(document.activeElement)) {
@@ -317,7 +634,6 @@
             titleInput.addEventListener('blur', handleBlur);
             descInput.addEventListener('blur', handleBlur);
 
-            // Save on Enter in title field
             titleInput.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
