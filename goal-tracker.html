@@ -33,6 +33,43 @@
             margin-bottom: 16px;
         }
 
+        .toolbar {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .toolbar button {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .toolbar button:hover {
+            background: #f0f0f0;
+        }
+
+        .save-indicator {
+            font-size: 11px;
+            color: #888;
+            margin-left: 10px;
+        }
+
+        .save-indicator.saving {
+            color: #f59e0b;
+        }
+
+        .save-indicator.saved {
+            color: #22c55e;
+        }
+
         .board {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -112,6 +149,7 @@
             opacity: 0.85;
             line-height: 1.4;
             pointer-events: none;
+            white-space: pre-wrap;
         }
 
         /* Card colors by column */
@@ -282,12 +320,91 @@
             border-radius: 6px;
             min-height: 100px;
         }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            min-width: 500px;
+            max-width: 90%;
+            max-height: 80vh;
+            overflow: auto;
+        }
+
+        .modal h2 {
+            margin-bottom: 16px;
+            font-size: 18px;
+        }
+
+        .modal textarea {
+            width: 100%;
+            min-height: 300px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            resize: vertical;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            justify-content: flex-end;
+        }
+
+        .modal-buttons button {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .btn-cancel {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+        }
+
+        .btn-cancel:hover {
+            background: #e8e8e8;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
     </style>
 </head>
 
 <body>
     <h1>Task Tracker</h1>
     <p class="help-text">💡 Click to edit · Hold to drag · Right-click for options</p>
+
+    <div class="toolbar">
+        <button id="exportBtn">📤 Export</button>
+        <button id="importBtn">📥 Import</button>
+        <span class="save-indicator" id="saveIndicator"></span>
+    </div>
 
     <div class="board">
         <!-- Column 1: Waiting on Me -->
@@ -324,6 +441,8 @@
     </div>
 
     <script>
+        const STORAGE_KEY = 'task-tracker-data';
+
         // Column definitions
         const columns = {
             'waiting-on-me': { name: 'Waiting on Me', color: 'yellow' },
@@ -344,10 +463,15 @@
             offsetY: 0
         };
 
-        const HOLD_DELAY = 100; // ms to hold before drag starts
+        const HOLD_DELAY = 100;
+
+        // Save scheduling
+        let saveTimer = null;
 
         // Initialize the board
         document.addEventListener('DOMContentLoaded', function () {
+            loadFromStorage();
+
             // Add click handlers to "Add Card" buttons
             document.querySelectorAll('.add-card-btn').forEach(btn => {
                 btn.addEventListener('click', function () {
@@ -359,6 +483,12 @@
                 });
             });
 
+            // Export button
+            document.getElementById('exportBtn').addEventListener('click', exportData);
+
+            // Import button
+            document.getElementById('importBtn').addEventListener('click', showImportModal);
+
             // Close context menu when clicking elsewhere
             document.addEventListener('click', hideContextMenu);
 
@@ -368,9 +498,10 @@
         });
 
         // Create a new card element
-        function createCard(title, description) {
+        function createCard(title, description, id = null) {
             const card = document.createElement('div');
             card.className = 'card';
+            card.dataset.id = id || generateId();
 
             const displayTitle = title || 'New Task';
             const displayDesc = description || 'Click to add description...';
@@ -384,9 +515,13 @@
             return card;
         }
 
-        // Setup card interactions (click, right-click, drag)
+        // Generate unique ID
+        function generateId() {
+            return 'card-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Setup card interactions
         function setupCardInteractions(card) {
-            // Mouse down - start hold timer
             card.addEventListener('mousedown', function (e) {
                 if (this.classList.contains('editing') || e.button !== 0) return;
 
@@ -403,14 +538,12 @@
                 }, HOLD_DELAY);
             });
 
-            // Click to edit (only if not dragging)
             card.addEventListener('click', function (e) {
                 if (!this.classList.contains('editing') && !dragState.isDragging) {
                     startEditing(this);
                 }
             });
 
-            // Right-click for context menu
             card.addEventListener('contextmenu', function (e) {
                 e.preventDefault();
                 if (!this.classList.contains('editing')) {
@@ -419,20 +552,18 @@
             });
         }
 
-        // Start dragging a card
+        // Start dragging
         function startDragging(card, e) {
             if (card.classList.contains('editing')) return;
 
             dragState.isDragging = true;
             dragState.card = card;
 
-            // Create placeholder
             dragState.placeholder = document.createElement('div');
             dragState.placeholder.className = 'card-placeholder';
             dragState.placeholder.style.height = card.offsetHeight + 'px';
             card.parentNode.insertBefore(dragState.placeholder, card);
 
-            // Style the dragging card
             const rect = card.getBoundingClientRect();
             card.classList.add('dragging');
             card.style.width = rect.width + 'px';
@@ -441,9 +572,8 @@
             document.body.appendChild(card);
         }
 
-        // Handle mouse move for dragging
+        // Handle mouse move
         function handleMouseMove(e) {
-            // Cancel hold if mouse moved too much before drag started
             if (dragState.holdTimer) {
                 const distance = Math.sqrt(
                     Math.pow(e.clientX - dragState.startX, 2) +
@@ -457,11 +587,9 @@
 
             if (!dragState.isDragging || !dragState.card) return;
 
-            // Move the card
             dragState.card.style.left = (e.clientX - dragState.offsetX) + 'px';
             dragState.card.style.top = (e.clientY - dragState.offsetY) + 'px';
 
-            // Highlight drop target column
             document.querySelectorAll('.column').forEach(col => col.classList.remove('drop-target'));
             const targetColumn = document.elementFromPoint(e.clientX, e.clientY)?.closest('.column');
             if (targetColumn) {
@@ -469,9 +597,8 @@
             }
         }
 
-        // Handle mouse up - either click or drop
+        // Handle mouse up
         function handleMouseUp(e) {
-            // Clear hold timer
             if (dragState.holdTimer) {
                 clearTimeout(dragState.holdTimer);
                 dragState.holdTimer = null;
@@ -482,7 +609,6 @@
             const card = dragState.card;
             const placeholder = dragState.placeholder;
 
-            // Find drop target
             card.style.display = 'none';
             const elementBelow = document.elementFromPoint(e.clientX, e.clientY);
             card.style.display = '';
@@ -490,7 +616,6 @@
             const targetColumn = elementBelow?.closest('.column');
             const targetContainer = targetColumn?.querySelector('.cards-container');
 
-            // Remove dragging styles
             card.classList.remove('dragging');
             card.style.position = '';
             card.style.left = '';
@@ -504,14 +629,14 @@
                 placeholder.parentNode.insertBefore(card, placeholder);
             }
 
-            // Cleanup
             placeholder.remove();
             document.querySelectorAll('.column').forEach(col => col.classList.remove('drop-target'));
 
-            // Reset state
             dragState.isDragging = false;
             dragState.card = null;
             dragState.placeholder = null;
+
+            scheduleSave();
         }
 
         // Show context menu
@@ -543,7 +668,6 @@
 
             document.body.appendChild(menu);
 
-            // Keep menu in viewport
             const rect = menu.getBoundingClientRect();
             if (rect.right > window.innerWidth) {
                 menu.style.left = (window.innerWidth - rect.width - 10) + 'px';
@@ -552,7 +676,6 @@
                 menu.style.top = (window.innerHeight - rect.height - 10) + 'px';
             }
 
-            // Handle menu clicks
             menu.addEventListener('click', function (e) {
                 const item = e.target.closest('.context-menu-item');
                 if (!item) return;
@@ -563,23 +686,24 @@
                     const targetColumn = item.dataset.column;
                     const targetContainer = document.querySelector(`.column[data-column="${targetColumn}"] .cards-container`);
                     targetContainer.appendChild(card);
+                    scheduleSave();
                 }
 
                 if (action === 'delete') {
                     card.remove();
+                    scheduleSave();
                 }
 
                 hideContextMenu();
             });
         }
 
-        // Hide context menu
         function hideContextMenu() {
             const existing = document.querySelector('.context-menu');
             if (existing) existing.remove();
         }
 
-        // Start editing a card
+        // Start editing
         function startEditing(card) {
             if (card.classList.contains('editing')) return;
 
@@ -607,6 +731,7 @@
 
                 if (!newTitle && !newDesc) {
                     card.remove();
+                    scheduleSave();
                     return;
                 }
 
@@ -621,6 +746,8 @@
                         startEditing(this);
                     }
                 });
+
+                scheduleSave();
             }
 
             function handleBlur(e) {
@@ -651,11 +778,160 @@
             });
         }
 
-        // Helper to escape HTML
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // Storage functions
+        function getBoardState() {
+            const state = { columns: {} };
+
+            document.querySelectorAll('.column').forEach(col => {
+                const columnId = col.dataset.column;
+                state.columns[columnId] = [];
+
+                col.querySelectorAll('.card').forEach(card => {
+                    if (card.classList.contains('editing')) return;
+
+                    const titleEl = card.querySelector('.card-title');
+                    const descEl = card.querySelector('.card-description');
+
+                    state.columns[columnId].push({
+                        id: card.dataset.id,
+                        title: titleEl ? titleEl.textContent : '',
+                        description: descEl ? descEl.textContent : ''
+                    });
+                });
+            });
+
+            return state;
+        }
+
+        function scheduleSave() {
+            if (saveTimer) {
+                clearTimeout(saveTimer);
+            }
+
+            showSaveIndicator('saving');
+
+            saveTimer = setTimeout(() => {
+                saveToStorage();
+                showSaveIndicator('saved');
+            }, 500);
+        }
+
+        function saveToStorage() {
+            const state = getBoardState();
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+
+        function loadFromStorage() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (!data) return;
+
+            try {
+                const state = JSON.parse(data);
+                loadBoardState(state);
+            } catch (e) {
+                console.error('Failed to load data:', e);
+            }
+        }
+
+        function loadBoardState(state) {
+            // Clear existing cards
+            document.querySelectorAll('.cards-container').forEach(c => c.innerHTML = '');
+
+            if (state.columns) {
+                Object.entries(state.columns).forEach(([columnId, cards]) => {
+                    const container = document.querySelector(`.column[data-column="${columnId}"] .cards-container`);
+                    if (container) {
+                        cards.forEach(cardData => {
+                            const card = createCard(cardData.title, cardData.description, cardData.id);
+                            container.appendChild(card);
+                        });
+                    }
+                });
+            }
+        }
+
+        function showSaveIndicator(status) {
+            const indicator = document.getElementById('saveIndicator');
+            indicator.className = 'save-indicator ' + status;
+            indicator.textContent = status === 'saving' ? 'Saving...' : 'Saved ✓';
+
+            if (status === 'saved') {
+                setTimeout(() => {
+                    indicator.textContent = '';
+                }, 2000);
+            }
+        }
+
+        // Export
+        function exportData() {
+            const state = getBoardState();
+            const json = JSON.stringify(state, null, 2);
+
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'task-tracker-export.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Import modal
+        function showImportModal() {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.innerHTML = `
+                <div class="modal">
+                    <h2>📥 Import Tasks</h2>
+                    <p style="margin-bottom: 12px; color: #666;">Paste your JSON data below:</p>
+                    <textarea id="importTextarea" placeholder="Paste JSON here..."></textarea>
+                    <div class="modal-buttons">
+                        <button class="btn-cancel" id="cancelImport">Cancel</button>
+                        <button class="btn-primary" id="confirmImport">Import</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            const textarea = document.getElementById('importTextarea');
+            textarea.focus();
+
+            document.getElementById('cancelImport').addEventListener('click', () => {
+                overlay.remove();
+            });
+
+            document.getElementById('confirmImport').addEventListener('click', () => {
+                const json = textarea.value.trim();
+                if (!json) {
+                    alert('Please paste JSON data first.');
+                    return;
+                }
+
+                try {
+                    const state = JSON.parse(json);
+                    loadBoardState(state);
+                    saveToStorage();
+                    overlay.remove();
+                } catch (e) {
+                    alert('Invalid JSON format. Please check your data.');
+                }
+            });
+
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.remove();
+                }
+            });
         }
     </script>
 </body>
