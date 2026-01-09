@@ -26,6 +26,51 @@
             font-weight: 600;
         }
 
+        .toolbar {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .toolbar-btn {
+            padding: 8px 16px;
+            border: 1px solid #ccc;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #555;
+            transition: all 0.2s ease;
+        }
+
+        .toolbar-btn:hover {
+            background: #f0f0f0;
+            border-color: #999;
+            color: #333;
+        }
+
+        .toolbar-btn.primary {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+        }
+
+        .toolbar-btn.primary:hover {
+            background: #2563eb;
+        }
+
+        .save-indicator {
+            font-size: 12px;
+            color: #22c55e;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .save-indicator.show {
+            opacity: 1;
+        }
+
         .help-text {
             text-align: center;
             font-size: 12px;
@@ -33,41 +78,89 @@
             margin-bottom: 16px;
         }
 
-        .toolbar {
-            display: flex;
+        /* Import Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
             justify-content: center;
-            gap: 10px;
+            align-items: center;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal h2 {
+            margin-bottom: 12px;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .modal p {
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .modal textarea {
+            width: 100%;
+            height: 200px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 12px;
+            resize: vertical;
             margin-bottom: 16px;
         }
 
-        .toolbar button {
-            padding: 8px 16px;
-            border: 1px solid #ddd;
-            background: white;
+        .modal textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .modal-buttons button {
+            padding: 10px 20px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            font-size: 14px;
         }
 
-        .toolbar button:hover {
-            background: #f0f0f0;
+        .modal-buttons .cancel-btn {
+            background: white;
+            border: 1px solid #ccc;
+            color: #555;
         }
 
-        .save-indicator {
-            font-size: 11px;
-            color: #888;
-            margin-left: 10px;
+        .modal-buttons .import-btn {
+            background: #3b82f6;
+            border: 1px solid #3b82f6;
+            color: white;
         }
 
-        .save-indicator.saving {
-            color: #f59e0b;
-        }
-
-        .save-indicator.saved {
-            color: #22c55e;
+        .modal-buttons .import-btn:hover {
+            background: #2563eb;
         }
 
         .board {
@@ -94,6 +187,26 @@
             border-radius: 6px;
             margin-bottom: 12px;
             text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .clear-completed-btn {
+            background: rgba(0, 0, 0, 0.15);
+            border: none;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            cursor: pointer;
+            color: inherit;
+            transition: background 0.2s;
+            margin-left: auto;
+        }
+
+        .clear-completed-btn:hover {
+            background: rgba(0, 0, 0, 0.25);
         }
 
         /* Column-specific header colors */
@@ -128,13 +241,9 @@
             padding: 12px;
             min-height: 80px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            cursor: pointer;
+            cursor: default;
             user-select: none;
             -webkit-user-select: none;
-        }
-
-        .card:hover {
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         }
 
         .card-title {
@@ -150,6 +259,15 @@
             line-height: 1.4;
             pointer-events: none;
             white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .card-timestamp {
+            font-size: 11px;
+            color: #999;
+            text-align: right;
+            margin-top: 8px;
+            pointer-events: none;
         }
 
         /* Card colors by column */
@@ -196,7 +314,6 @@
         /* Editable card styles */
         .card.editing {
             padding: 8px;
-            cursor: default;
         }
 
         .card-title-input,
@@ -226,6 +343,14 @@
             outline: none;
             border-color: #3b82f6;
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        .card:not(.editing) {
+            cursor: pointer;
+        }
+
+        .card:not(.editing):hover {
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         }
 
         /* Context Menu */
@@ -308,6 +433,11 @@
             cursor: grabbing;
         }
 
+        .card.drag-ready {
+            cursor: grab;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
         .card-placeholder {
             border: 2px dashed rgba(0, 0, 0, 0.3);
             border-radius: 6px;
@@ -321,95 +451,390 @@
             min-height: 100px;
         }
 
-        /* Modal Overlay */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+        .column.drop-target .column-header {
+            transform: scale(1.02);
+        }
+
+        /* Program Bar */
+        .program-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .program-bar-label {
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .program-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .program-tag-btn {
+            padding: 5px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .program-tag-btn:hover {
+            filter: brightness(0.95);
+        }
+
+        .program-tag-btn.active {
+            border-color: #333;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .program-tag-btn.all-filter {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .add-program-btn {
+            padding: 5px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            background: white;
+            border: 2px dashed #ccc;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .add-program-btn:hover {
+            border-color: #999;
+            color: #555;
+        }
+
+        /* Card program tag */
+        .card-program-tag {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            pointer-events: none;
+        }
+
+        .card {
+            position: relative;
+        }
+
+        /* Program selector in edit mode */
+        .program-selector {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .program-selector-label {
+            font-size: 11px;
+            color: #888;
+            width: 100%;
+            margin-bottom: 2px;
+        }
+
+        .program-option {
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.15s;
+        }
+
+        .program-option:hover {
+            filter: brightness(0.95);
+        }
+
+        .program-option.selected {
+            border-color: #333;
+        }
+
+        .program-option.none {
+            background: #f0f0f0;
+            color: #888;
+        }
+
+        /* Program Modal */
+        .program-modal-content {
+            margin-bottom: 16px;
+        }
+
+        .program-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .program-list-item {
             display: flex;
             align-items: center;
-            justify-content: center;
-            z-index: 2000;
-        }
-
-        .modal {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            min-width: 500px;
-            max-width: 90%;
-            max-height: 80vh;
-            overflow: auto;
-        }
-
-        .modal h2 {
-            margin-bottom: 16px;
-            font-size: 18px;
-        }
-
-        .modal textarea {
-            width: 100%;
-            min-height: 300px;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 12px;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            resize: vertical;
-        }
-
-        .modal-buttons {
-            display: flex;
             gap: 10px;
-            margin-top: 16px;
-            justify-content: flex-end;
-        }
-
-        .modal-buttons button {
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-
-        .btn-cancel {
+            padding: 8px 12px;
             background: #f5f5f5;
-            border: 1px solid #ddd;
+            border-radius: 6px;
         }
 
-        .btn-cancel:hover {
+        .program-color-preview {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .program-name {
+            flex-grow: 1;
+            font-size: 14px;
+        }
+
+        .program-edit-btn,
+        .program-delete-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .program-edit-btn:hover,
+        .program-delete-btn:hover {
+            opacity: 1;
+        }
+
+        .program-list-item.editing {
             background: #e8e8e8;
         }
 
-        .btn-primary {
-            background: #3b82f6;
-            color: white;
-            border: none;
+        .program-list-item.editing .program-name-input {
+            flex-grow: 1;
+            padding: 4px 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
         }
 
-        .btn-primary:hover {
+        .program-list-item.editing .program-color-preview {
+            cursor: pointer;
+            border: 2px solid #999;
+        }
+
+        .program-list-item.editing .program-color-preview:hover {
+            transform: scale(1.1);
+        }
+
+        .program-edit-colors {
+            display: none;
+            position: absolute;
+            background: white;
+            border-radius: 8px;
+            padding: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+            margin-top: 4px;
+        }
+
+        .program-edit-colors.show {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 4px;
+            width: 160px;
+        }
+
+        .program-save-btn {
+            background: #22c55e;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .program-save-btn:hover {
+            background: #16a34a;
+        }
+
+        .add-program-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .add-program-form input[type="text"] {
+            flex-grow: 1;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .color-picker-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .color-picker-selected {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #ccc;
+            transition: all 0.15s;
+        }
+
+        .color-picker-selected:hover {
+            border-color: #999;
+            transform: scale(1.05);
+        }
+
+        .color-picker-dropdown {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+            margin-bottom: 8px;
+        }
+
+        .color-picker-dropdown.show {
+            display: block;
+        }
+
+        .color-swatches {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 6px;
+            width: 180px;
+        }
+
+        .color-swatch {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.15s;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.15);
+        }
+
+        .color-swatch.selected {
+            border-color: #333;
+        }
+
+        .add-program-form button {
+            padding: 8px 16px;
+            background: #3b82f6;
+            border: 1px solid #3b82f6;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .add-program-form button:hover {
             background: #2563eb;
+        }
+
+        /* Hide cards when filtered out */
+        .card.filtered-out {
+            display: none;
         }
     </style>
 </head>
 
 <body>
-    <h1>Task Tracker</h1>
-    <p class="help-text">💡 Click to edit · Hold to drag · Right-click for options</p>
+    <h1>//todo</h1>
 
     <div class="toolbar">
-        <button id="exportBtn">📤 Export</button>
-        <button id="importBtn">📥 Import</button>
-        <span class="save-indicator" id="saveIndicator"></span>
+        <button class="toolbar-btn" id="exportBtn">📥 Export JSON</button>
+        <button class="toolbar-btn" id="importBtn">📤 Import JSON</button>
+        <span class="save-indicator" id="saveIndicator">✓ Saved</span>
+    </div>
+
+    <p class="help-text">💡 Click to edit · Hold to drag · Right-click for options</p>
+
+    <!-- Program Bar -->
+    <div class="program-bar">
+        <span class="program-bar-label">Programs:</span>
+        <div class="program-tags" id="programTags">
+            <button class="program-tag-btn all-filter active" data-program="">All</button>
+        </div>
+        <button class="add-program-btn" id="addProgramBtn">+ Add Program</button>
+    </div>
+
+    <!-- Program Modal -->
+    <div class="modal-overlay" id="programModal">
+        <div class="modal">
+            <h2>📁 Manage Programs</h2>
+            <p>Programs help you group related tasks together. Assign a color to each program for easy identification.
+            </p>
+            <div class="program-modal-content">
+                <div class="program-list" id="programList">
+                    <!-- Programs will be rendered here -->
+                </div>
+                <div class="add-program-form">
+                    <input type="text" id="newProgramName" placeholder="Program name..." maxlength="30">
+                    <div class="color-picker-wrapper">
+                        <div class="color-picker-selected" id="colorPickerSelected"></div>
+                        <div class="color-picker-dropdown" id="colorPickerDropdown">
+                            <div class="color-swatches" id="colorSwatches"></div>
+                        </div>
+                    </div>
+                    <button id="addProgramSubmit">Add</button>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="closeProgramModal">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div class="modal-overlay" id="importModal">
+        <div class="modal">
+            <h2>📤 Import Data</h2>
+            <p>Paste your exported JSON below. This will replace all current tasks.</p>
+            <textarea id="importTextarea" placeholder='Paste JSON here...'></textarea>
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="cancelImport">Cancel</button>
+                <button class="import-btn" id="confirmImport">Import</button>
+            </div>
+        </div>
     </div>
 
     <div class="board">
         <!-- Column 1: Waiting on Me -->
         <div class="column waiting-on-me" data-column="waiting-on-me">
-            <div class="column-header">Waiting on Me</div>
+            <div class="column-header"><span>Waiting on Me</span></div>
             <div class="cards-container">
             </div>
             <button class="add-card-btn">+ Add Task</button>
@@ -417,7 +842,7 @@
 
         <!-- Column 2: Waiting on Someone Else -->
         <div class="column waiting-on-others" data-column="waiting-on-others">
-            <div class="column-header">Waiting on Someone Else</div>
+            <div class="column-header"><span>Waiting on Someone Else</span></div>
             <div class="cards-container">
             </div>
             <button class="add-card-btn">+ Add Task</button>
@@ -425,7 +850,7 @@
 
         <!-- Column 3: Blocked -->
         <div class="column blocked" data-column="blocked">
-            <div class="column-header">Blocked</div>
+            <div class="column-header"><span>Blocked</span></div>
             <div class="cards-container">
             </div>
             <button class="add-card-btn">+ Add Task</button>
@@ -433,7 +858,8 @@
 
         <!-- Column 4: Completed -->
         <div class="column completed" data-column="completed">
-            <div class="column-header">Completed</div>
+            <div class="column-header"><span>Completed</span><button class="clear-completed-btn"
+                    id="clearCompletedBtn">Clear</button></div>
             <div class="cards-container">
             </div>
             <button class="add-card-btn">+ Add Task</button>
@@ -441,8 +867,6 @@
     </div>
 
     <script>
-        const STORAGE_KEY = 'task-tracker-data';
-
         // Column definitions
         const columns = {
             'waiting-on-me': { name: 'Waiting on Me', color: 'yellow' },
@@ -450,6 +874,10 @@
             'blocked': { name: 'Blocked', color: 'red' },
             'completed': { name: 'Completed', color: 'green' }
         };
+
+        // Programs list (will be loaded from storage)
+        let programs = [];
+        let activeFilter = ''; // Empty string means "All"
 
         // Drag state
         let dragState = {
@@ -463,31 +891,22 @@
             offsetY: 0
         };
 
-        const HOLD_DELAY = 100;
-
-        // Save scheduling
-        let saveTimer = null;
+        const HOLD_DELAY = 100; // ms to hold before drag starts
 
         // Initialize the board
         document.addEventListener('DOMContentLoaded', function () {
-            loadFromStorage();
-
             // Add click handlers to "Add Card" buttons
             document.querySelectorAll('.add-card-btn').forEach(btn => {
                 btn.addEventListener('click', function () {
                     const column = this.closest('.column');
                     const container = column.querySelector('.cards-container');
-                    const card = createCard('', '');
+                    // If filtered to a program, assign that program to new cards
+                    const programToAssign = activeFilter || null;
+                    const card = createCard('', '', true, null, null, programToAssign);
                     container.appendChild(card);
                     startEditing(card);
                 });
             });
-
-            // Export button
-            document.getElementById('exportBtn').addEventListener('click', exportData);
-
-            // Import button
-            document.getElementById('importBtn').addEventListener('click', showImportModal);
 
             // Close context menu when clicking elsewhere
             document.addEventListener('click', hideContextMenu);
@@ -498,30 +917,86 @@
         });
 
         // Create a new card element
-        function createCard(title, description, id = null) {
+        function createCard(title, description, isNew = true, createdAt = null, updatedAt = null, programId = null) {
             const card = document.createElement('div');
             card.className = 'card';
-            card.dataset.id = id || generateId();
 
-            const displayTitle = title || 'New Task';
-            const displayDesc = description || 'Click to add description...';
+            // Set timestamps
+            const now = new Date().toISOString();
+            card.dataset.createdAt = createdAt || now;
+            card.dataset.updatedAt = updatedAt || createdAt || now;
+            card.dataset.programId = programId || '';
+
+            // Only show placeholders for brand new cards
+            const displayTitle = title || (isNew ? 'New Task' : '');
+            const displayDesc = description || (isNew ? 'Click to add description...' : '');
+            const timestampDisplay = formatTimestamp(card.dataset.createdAt, card.dataset.updatedAt);
+
+            // Get program tag HTML
+            const programTagHtml = getProgramTagHtml(programId);
 
             card.innerHTML = `
+                ${programTagHtml}
                 <div class="card-title">${escapeHtml(displayTitle)}</div>
                 <div class="card-description">${escapeHtml(displayDesc)}</div>
+                <div class="card-timestamp">${timestampDisplay}</div>
             `;
 
+            // Setup all card interactions
             setupCardInteractions(card);
+
+            // Apply filter if active
+            applyFilterToCard(card);
+
             return card;
         }
 
-        // Generate unique ID
-        function generateId() {
-            return 'card-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        // Get program tag HTML for a card
+        function getProgramTagHtml(programId) {
+            if (!programId) return '';
+            const program = programs.find(p => p.id === programId);
+            if (!program) return '';
+
+            // Calculate contrasting text color
+            const textColor = getContrastColor(program.color);
+            return `<div class="card-program-tag" style="background-color: ${program.color}; color: ${textColor}">${escapeHtml(program.name)}</div>`;
         }
 
-        // Setup card interactions
+        // Get contrasting text color (black or white) based on background
+        function getContrastColor(hexColor) {
+            const hex = hexColor.replace('#', '');
+            const r = parseInt(hex.substr(0, 2), 16);
+            const g = parseInt(hex.substr(2, 2), 16);
+            const b = parseInt(hex.substr(4, 2), 16);
+            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            return luminance > 0.5 ? '#000000' : '#ffffff';
+        }
+
+        // Format timestamp for display
+        function formatTimestamp(createdAt, updatedAt) {
+            const created = new Date(createdAt);
+            const updated = new Date(updatedAt);
+            const now = new Date();
+
+            // Format: "Jan 9" or "Jan 9, 2025" if different year
+            const options = { month: 'short', day: 'numeric' };
+            if (created.getFullYear() !== now.getFullYear()) {
+                options.year = 'numeric';
+            }
+
+            let display = created.toLocaleDateString('en-US', options);
+
+            // Show "(edited)" if updated more than 1 minute after creation
+            if (updated - created > 60000) {
+                display += ' (edited)';
+            }
+
+            return display;
+        }
+
+        // Setup card interactions (click, right-click, drag)
         function setupCardInteractions(card) {
+            // Mouse down - start hold timer
             card.addEventListener('mousedown', function (e) {
                 if (this.classList.contains('editing') || e.button !== 0) return;
 
@@ -538,12 +1013,14 @@
                 }, HOLD_DELAY);
             });
 
+            // Click to edit (only if not dragging)
             card.addEventListener('click', function (e) {
                 if (!this.classList.contains('editing') && !dragState.isDragging) {
                     startEditing(this);
                 }
             });
 
+            // Right-click for context menu
             card.addEventListener('contextmenu', function (e) {
                 e.preventDefault();
                 if (!this.classList.contains('editing')) {
@@ -552,18 +1029,20 @@
             });
         }
 
-        // Start dragging
+        // Start dragging a card
         function startDragging(card, e) {
             if (card.classList.contains('editing')) return;
 
             dragState.isDragging = true;
             dragState.card = card;
 
+            // Create placeholder
             dragState.placeholder = document.createElement('div');
             dragState.placeholder.className = 'card-placeholder';
             dragState.placeholder.style.height = card.offsetHeight + 'px';
             card.parentNode.insertBefore(dragState.placeholder, card);
 
+            // Style the dragging card
             const rect = card.getBoundingClientRect();
             card.classList.add('dragging');
             card.style.width = rect.width + 'px';
@@ -572,8 +1051,9 @@
             document.body.appendChild(card);
         }
 
-        // Handle mouse move
+        // Handle mouse move for dragging
         function handleMouseMove(e) {
+            // Cancel hold if mouse moved too much before drag started
             if (dragState.holdTimer) {
                 const distance = Math.sqrt(
                     Math.pow(e.clientX - dragState.startX, 2) +
@@ -587,9 +1067,11 @@
 
             if (!dragState.isDragging || !dragState.card) return;
 
+            // Move the card
             dragState.card.style.left = (e.clientX - dragState.offsetX) + 'px';
             dragState.card.style.top = (e.clientY - dragState.offsetY) + 'px';
 
+            // Highlight drop target column
             document.querySelectorAll('.column').forEach(col => col.classList.remove('drop-target'));
             const targetColumn = document.elementFromPoint(e.clientX, e.clientY)?.closest('.column');
             if (targetColumn) {
@@ -597,8 +1079,9 @@
             }
         }
 
-        // Handle mouse up
+        // Handle mouse up - either click or drop
         function handleMouseUp(e) {
+            // Clear hold timer
             if (dragState.holdTimer) {
                 clearTimeout(dragState.holdTimer);
                 dragState.holdTimer = null;
@@ -609,13 +1092,15 @@
             const card = dragState.card;
             const placeholder = dragState.placeholder;
 
-            card.style.display = 'none';
+            // Find drop target
+            card.style.display = 'none'; // Temporarily hide to get element below
             const elementBelow = document.elementFromPoint(e.clientX, e.clientY);
             card.style.display = '';
 
             const targetColumn = elementBelow?.closest('.column');
             const targetContainer = targetColumn?.querySelector('.cards-container');
 
+            // Remove dragging styles
             card.classList.remove('dragging');
             card.style.position = '';
             card.style.left = '';
@@ -624,24 +1109,29 @@
             card.style.zIndex = '';
 
             if (targetContainer) {
+                // Drop into target column
                 targetContainer.appendChild(card);
             } else if (placeholder.parentNode) {
+                // Return to original position
                 placeholder.parentNode.insertBefore(card, placeholder);
             }
 
+            // Cleanup
             placeholder.remove();
             document.querySelectorAll('.column').forEach(col => col.classList.remove('drop-target'));
 
+            // Save after move
+            scheduleSave();
+
+            // Reset state
             dragState.isDragging = false;
             dragState.card = null;
             dragState.placeholder = null;
-
-            scheduleSave();
         }
 
         // Show context menu
         function showContextMenu(e, card) {
-            hideContextMenu();
+            hideContextMenu(); // Remove any existing menu
 
             const currentColumn = card.closest('.column').dataset.column;
 
@@ -663,11 +1153,13 @@
                 </div>
             `;
 
+            // Position menu at cursor
             menu.style.left = e.pageX + 'px';
             menu.style.top = e.pageY + 'px';
 
             document.body.appendChild(menu);
 
+            // Keep menu in viewport
             const rect = menu.getBoundingClientRect();
             if (rect.right > window.innerWidth) {
                 menu.style.left = (window.innerWidth - rect.width - 10) + 'px';
@@ -676,6 +1168,7 @@
                 menu.style.top = (window.innerHeight - rect.height - 10) + 'px';
             }
 
+            // Handle menu clicks
             menu.addEventListener('click', function (e) {
                 const item = e.target.closest('.context-menu-item');
                 if (!item) return;
@@ -698,12 +1191,13 @@
             });
         }
 
+        // Hide context menu
         function hideContextMenu() {
             const existing = document.querySelector('.context-menu');
             if (existing) existing.remove();
         }
 
-        // Start editing
+        // Start editing a card
         function startEditing(card) {
             if (card.classList.contains('editing')) return;
 
@@ -712,11 +1206,28 @@
 
             const currentTitle = titleEl.textContent === 'New Task' ? '' : titleEl.textContent;
             const currentDesc = descEl.textContent === 'Click to add description...' ? '' : descEl.textContent;
+            const currentProgram = card.dataset.programId || '';
 
             card.classList.add('editing');
+
+            // Build program options HTML
+            const programOptionsHtml = `
+                <div class="program-selector">
+                    <div class="program-selector-label">Program:</div>
+                    <div class="program-option none ${!currentProgram ? 'selected' : ''}" data-program-id="">None</div>
+                    ${programs.map(p => {
+                const textColor = getContrastColor(p.color);
+                return `<div class="program-option ${currentProgram === p.id ? 'selected' : ''}" 
+                                     data-program-id="${p.id}" 
+                                     style="background-color: ${p.color}; color: ${textColor}">${escapeHtml(p.name)}</div>`;
+            }).join('')}
+                </div>
+            `;
+
             card.innerHTML = `
                 <input type="text" class="card-title-input" placeholder="Task title..." value="${escapeHtml(currentTitle)}">
                 <textarea class="card-description-input" placeholder="Description (optional)...">${escapeHtml(currentDesc)}</textarea>
+                ${programOptionsHtml}
             `;
 
             const titleInput = card.querySelector('.card-title-input');
@@ -725,31 +1236,56 @@
             titleInput.focus();
             titleInput.select();
 
+            // Handle program selection
+            card.querySelectorAll('.program-option').forEach(opt => {
+                opt.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    card.querySelectorAll('.program-option').forEach(o => o.classList.remove('selected'));
+                    this.classList.add('selected');
+                    card.dataset.programId = this.dataset.programId;
+                });
+            });
+
+            // Save on blur (clicking outside)
             function saveCard() {
                 const newTitle = titleInput.value.trim();
                 const newDesc = descInput.value.trim();
 
+                // Remove card if empty
                 if (!newTitle && !newDesc) {
                     card.remove();
-                    scheduleSave();
                     return;
                 }
 
                 card.classList.remove('editing');
+
+                // Update the updated timestamp
+                card.dataset.updatedAt = new Date().toISOString();
+                const timestampDisplay = formatTimestamp(card.dataset.createdAt, card.dataset.updatedAt);
+                const programTagHtml = getProgramTagHtml(card.dataset.programId);
+
                 card.innerHTML = `
+                    ${programTagHtml}
                     <div class="card-title">${escapeHtml(newTitle) || 'Untitled'}</div>
                     <div class="card-description">${escapeHtml(newDesc) || ''}</div>
+                    <div class="card-timestamp">${timestampDisplay}</div>
                 `;
 
-                card.addEventListener('click', function () {
+                // Apply filter
+                applyFilterToCard(card);
+
+                // Save after edit
+                scheduleSave();
+
+                // Re-attach click listener
+                card.addEventListener('click', function (e) {
                     if (!this.classList.contains('editing')) {
                         startEditing(this);
                     }
                 });
-
-                scheduleSave();
             }
 
+            // Save when clicking outside
             function handleBlur(e) {
                 setTimeout(() => {
                     if (!card.contains(document.activeElement)) {
@@ -761,6 +1297,7 @@
             titleInput.addEventListener('blur', handleBlur);
             descInput.addEventListener('blur', handleBlur);
 
+            // Save on Enter (in title field), allow Enter in description
             titleInput.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -778,161 +1315,592 @@
             });
         }
 
+        // Helper to escape HTML
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
-        // Storage functions
-        function getBoardState() {
-            const state = { columns: {} };
+        // Initialize existing cards with all interactions
+        document.querySelectorAll('.card').forEach(card => {
+            setupCardInteractions(card);
+        });
 
-            document.querySelectorAll('.column').forEach(col => {
-                const columnId = col.dataset.column;
-                state.columns[columnId] = [];
+        // ==================== PERSISTENCE ====================
 
-                col.querySelectorAll('.card').forEach(card => {
-                    if (card.classList.contains('editing')) return;
+        const STORAGE_KEY = 'task-tracker-data';
 
+        // Save board state to LocalStorage
+        function saveToStorage() {
+            const data = {
+                version: 2,
+                savedAt: new Date().toISOString(),
+                programs: programs,
+                columns: {}
+            };
+
+            document.querySelectorAll('.column').forEach(column => {
+                const columnId = column.dataset.column;
+                const cards = [];
+
+                column.querySelectorAll('.card').forEach(card => {
                     const titleEl = card.querySelector('.card-title');
                     const descEl = card.querySelector('.card-description');
 
-                    state.columns[columnId].push({
-                        id: card.dataset.id,
-                        title: titleEl ? titleEl.textContent : '',
-                        description: descEl ? descEl.textContent : ''
-                    });
-                });
-            });
+                    // Handle both editing and non-editing states
+                    let title, description;
+                    if (card.classList.contains('editing')) {
+                        title = card.querySelector('.card-title-input')?.value || '';
+                        description = card.querySelector('.card-description-input')?.value || '';
+                    } else {
+                        title = titleEl?.textContent || '';
+                        description = descEl?.textContent || '';
+                        // Clean up placeholder text
+                        if (title === 'New Task') title = '';
+                        if (description === 'Click to add description...') description = '';
+                    }
 
-            return state;
-        }
-
-        function scheduleSave() {
-            if (saveTimer) {
-                clearTimeout(saveTimer);
-            }
-
-            showSaveIndicator('saving');
-
-            saveTimer = setTimeout(() => {
-                saveToStorage();
-                showSaveIndicator('saved');
-            }, 500);
-        }
-
-        function saveToStorage() {
-            const state = getBoardState();
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        }
-
-        function loadFromStorage() {
-            const data = localStorage.getItem(STORAGE_KEY);
-            if (!data) return;
-
-            try {
-                const state = JSON.parse(data);
-                loadBoardState(state);
-            } catch (e) {
-                console.error('Failed to load data:', e);
-            }
-        }
-
-        function loadBoardState(state) {
-            // Clear existing cards
-            document.querySelectorAll('.cards-container').forEach(c => c.innerHTML = '');
-
-            if (state.columns) {
-                Object.entries(state.columns).forEach(([columnId, cards]) => {
-                    const container = document.querySelector(`.column[data-column="${columnId}"] .cards-container`);
-                    if (container) {
-                        cards.forEach(cardData => {
-                            const card = createCard(cardData.title, cardData.description, cardData.id);
-                            container.appendChild(card);
+                    if (title || description) {
+                        cards.push({
+                            title,
+                            description,
+                            createdAt: card.dataset.createdAt || new Date().toISOString(),
+                            updatedAt: card.dataset.updatedAt || new Date().toISOString(),
+                            programId: card.dataset.programId || null
                         });
                     }
                 });
+
+                data.columns[columnId] = cards;
+            });
+
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            showSaveIndicator();
+        }
+
+        // Load board state from LocalStorage
+        function loadFromStorage() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (!stored) return;
+
+            try {
+                const data = JSON.parse(stored);
+
+                // Load programs first
+                if (data.programs && Array.isArray(data.programs)) {
+                    programs = data.programs;
+                    renderProgramBar();
+                }
+
+                loadData(data);
+            } catch (e) {
+                console.error('Failed to load saved data:', e);
             }
         }
 
-        function showSaveIndicator(status) {
+        // Load data into the board
+        function loadData(data) {
+            if (!data || !data.columns) return;
+
+            // Load programs if present
+            if (data.programs && Array.isArray(data.programs)) {
+                programs = data.programs;
+                renderProgramBar();
+            }
+
+            // Clear existing cards
+            document.querySelectorAll('.cards-container').forEach(container => {
+                container.innerHTML = '';
+            });
+
+            // Populate cards with a small delay between each to prevent browser freeze
+            const allCards = [];
+            Object.entries(data.columns).forEach(([columnId, cards]) => {
+                if (!Array.isArray(cards)) return;
+                cards.forEach(cardData => {
+                    if (cardData && (cardData.title || cardData.description)) {
+                        allCards.push({ columnId, cardData });
+                    }
+                });
+            });
+
+            // Add cards one at a time
+            let index = 0;
+            function addNextCard() {
+                if (index >= allCards.length) return;
+
+                const { columnId, cardData } = allCards[index];
+                const container = document.querySelector(`.column[data-column="${columnId}"] .cards-container`);
+                if (container) {
+                    const card = createCard(
+                        cardData.title || '',
+                        cardData.description || '',
+                        false,
+                        cardData.createdAt || null,
+                        cardData.updatedAt || null,
+                        cardData.programId || null
+                    );
+                    container.appendChild(card);
+                }
+                index++;
+
+                if (index < allCards.length) {
+                    setTimeout(addNextCard, 10);
+                }
+            }
+
+            addNextCard();
+        }
+
+        // Show save indicator
+        function showSaveIndicator() {
             const indicator = document.getElementById('saveIndicator');
-            indicator.className = 'save-indicator ' + status;
-            indicator.textContent = status === 'saving' ? 'Saving...' : 'Saved ✓';
-
-            if (status === 'saved') {
-                setTimeout(() => {
-                    indicator.textContent = '';
-                }, 2000);
-            }
+            indicator.classList.add('show');
+            setTimeout(() => indicator.classList.remove('show'), 1500);
         }
 
-        // Export
+        // Export data as JSON file
         function exportData() {
-            const state = getBoardState();
-            const json = JSON.stringify(state, null, 2);
+            const stored = localStorage.getItem(STORAGE_KEY);
+            const data = stored ? JSON.parse(stored) : { columns: {} };
 
-            const blob = new Blob([json], { type: 'application/json' });
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
 
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'task-tracker-export.json';
-            document.body.appendChild(a);
+            a.download = `task-tracker-${new Date().toISOString().slice(0, 10)}.json`;
             a.click();
-            document.body.removeChild(a);
+
             URL.revokeObjectURL(url);
         }
 
-        // Import modal
+        // Show import modal
         function showImportModal() {
-            const overlay = document.createElement('div');
-            overlay.className = 'modal-overlay';
-            overlay.innerHTML = `
-                <div class="modal">
-                    <h2>📥 Import Tasks</h2>
-                    <p style="margin-bottom: 12px; color: #666;">Paste your JSON data below:</p>
-                    <textarea id="importTextarea" placeholder="Paste JSON here..."></textarea>
-                    <div class="modal-buttons">
-                        <button class="btn-cancel" id="cancelImport">Cancel</button>
-                        <button class="btn-primary" id="confirmImport">Import</button>
-                    </div>
-                </div>
+            document.getElementById('importTextarea').value = '';
+            document.getElementById('importModal').classList.add('show');
+        }
+
+        // Hide import modal
+        function hideImportModal() {
+            document.getElementById('importModal').classList.remove('show');
+        }
+
+        // Process import from textarea
+        function processImport() {
+            const text = document.getElementById('importTextarea').value.trim();
+            if (!text) {
+                alert('Please paste JSON data first');
+                return;
+            }
+
+            try {
+                const data = JSON.parse(text);
+
+                // Clear localStorage first
+                localStorage.removeItem(STORAGE_KEY);
+
+                // Load the data
+                loadData(data);
+
+                // Save to localStorage
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+                hideImportModal();
+                showSaveIndicator();
+            } catch (err) {
+                alert('Invalid JSON. Please check the format and try again.');
+            }
+        }
+
+        // Setup toolbar buttons
+        document.getElementById('exportBtn').addEventListener('click', exportData);
+        document.getElementById('importBtn').addEventListener('click', showImportModal);
+        document.getElementById('cancelImport').addEventListener('click', hideImportModal);
+        document.getElementById('confirmImport').addEventListener('click', processImport);
+
+        // Clear completed button
+        document.getElementById('clearCompletedBtn').addEventListener('click', function (e) {
+            e.stopPropagation();
+            const completedContainer = document.querySelector('.column.completed .cards-container');
+            const cardCount = completedContainer.querySelectorAll('.card').length;
+            if (cardCount === 0) return;
+
+            if (confirm(`Clear ${cardCount} completed task${cardCount > 1 ? 's' : ''}?`)) {
+                completedContainer.innerHTML = '';
+                scheduleSave();
+            }
+        });
+
+        // Close modal on overlay click
+        document.getElementById('importModal').addEventListener('click', function (e) {
+            if (e.target === this) hideImportModal();
+        });
+
+        // Track last saved state to detect changes
+        let lastSavedState = '';
+
+        // Get current board state as a string for comparison
+        function getBoardState() {
+            const state = {};
+            document.querySelectorAll('.column').forEach(column => {
+                const columnId = column.dataset.column;
+                const cards = [];
+                column.querySelectorAll('.card').forEach(card => {
+                    const titleEl = card.querySelector('.card-title');
+                    const descEl = card.querySelector('.card-description');
+                    let title, description;
+                    if (card.classList.contains('editing')) {
+                        title = card.querySelector('.card-title-input')?.value || '';
+                        description = card.querySelector('.card-description-input')?.value || '';
+                    } else {
+                        title = titleEl?.textContent || '';
+                        description = descEl?.textContent || '';
+                        if (title === 'New Task') title = '';
+                        if (description === 'Click to add description...') description = '';
+                    }
+                    if (title || description) {
+                        cards.push({ title, description, programId: card.dataset.programId || '' });
+                    }
+                });
+                state[columnId] = cards;
+            });
+            return JSON.stringify(state);
+        }
+
+        // Debounced save function - only saves if there are changes
+        let saveTimeout = null;
+        function scheduleSave() {
+            if (saveTimeout) clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(function () {
+                const currentState = getBoardState();
+                if (currentState !== lastSavedState) {
+                    saveToStorage();
+                    lastSavedState = currentState;
+                }
+            }, 300);
+        }
+
+        // Load saved data on startup
+        loadFromStorage();
+
+        // Initialize last saved state after loading
+        lastSavedState = getBoardState();
+
+        // ==================== PROGRAMS ====================
+
+        // Preset colors for programs
+        const presetColors = [
+            '#ef4444', // red
+            '#f97316', // orange
+            '#f59e0b', // amber
+            '#eab308', // yellow
+            '#84cc16', // lime
+            '#22c55e', // green
+            '#14b8a6', // teal
+            '#06b6d4', // cyan
+            '#3b82f6', // blue
+            '#6366f1', // indigo
+            '#8b5cf6', // violet
+            '#a855f7', // purple
+            '#d946ef', // fuchsia
+            '#ec4899', // pink
+            '#f43f5e', // rose
+            '#78716c', // stone
+            '#6b7280', // gray
+            '#1e293b', // slate dark
+        ];
+
+        // Selected color for new programs
+        let selectedColor = presetColors[0];
+
+        // Render color swatches in dropdown
+        function renderColorSwatches() {
+            const container = document.getElementById('colorSwatches');
+            const selectedBtn = document.getElementById('colorPickerSelected');
+            const dropdown = document.getElementById('colorPickerDropdown');
+
+            // Set initial selected color display
+            selectedBtn.style.backgroundColor = selectedColor;
+
+            // Build swatches
+            container.innerHTML = presetColors.map(color =>
+                `<div class="color-swatch ${color === selectedColor ? 'selected' : ''}" data-color="${color}" style="background-color: ${color}"></div>`
+            ).join('');
+
+            // Handle swatch clicks
+            container.querySelectorAll('.color-swatch').forEach(swatch => {
+                swatch.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    container.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedColor = this.dataset.color;
+                    selectedBtn.style.backgroundColor = selectedColor;
+                    dropdown.classList.remove('show');
+                });
+            });
+
+            // Toggle dropdown on button click
+            selectedBtn.onclick = function (e) {
+                e.stopPropagation();
+                dropdown.classList.toggle('show');
+            };
+        }
+
+        // Close color picker dropdown when clicking outside
+        document.addEventListener('click', function () {
+            document.getElementById('colorPickerDropdown')?.classList.remove('show');
+        });
+
+        // Render program bar (filter buttons)
+        function renderProgramBar() {
+            const container = document.getElementById('programTags');
+            container.innerHTML = `
+                <button class="program-tag-btn all-filter ${activeFilter === '' ? 'active' : ''}" data-program="">All</button>
+                ${programs.map(p => {
+                const textColor = getContrastColor(p.color);
+                return `<button class="program-tag-btn ${activeFilter === p.id ? 'active' : ''}" 
+                                    data-program="${p.id}" 
+                                    style="background-color: ${p.color}; color: ${textColor}">${escapeHtml(p.name)}</button>`;
+            }).join('')}
             `;
 
-            document.body.appendChild(overlay);
+            // Attach click handlers
+            container.querySelectorAll('.program-tag-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    activeFilter = this.dataset.program;
+                    container.querySelectorAll('.program-tag-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    applyFilter();
+                });
+            });
+        }
 
-            const textarea = document.getElementById('importTextarea');
-            textarea.focus();
+        // Apply filter to all cards
+        function applyFilter() {
+            document.querySelectorAll('.card').forEach(card => {
+                applyFilterToCard(card);
+            });
+        }
 
-            document.getElementById('cancelImport').addEventListener('click', () => {
-                overlay.remove();
+        // Apply filter to a single card
+        function applyFilterToCard(card) {
+            if (activeFilter === '') {
+                card.classList.remove('filtered-out');
+            } else {
+                if (card.dataset.programId === activeFilter) {
+                    card.classList.remove('filtered-out');
+                } else {
+                    card.classList.add('filtered-out');
+                }
+            }
+        }
+
+        // Render program list in modal
+        function renderProgramList() {
+            const container = document.getElementById('programList');
+            if (programs.length === 0) {
+                container.innerHTML = '<p style="color: #888; font-size: 13px;">No programs yet. Add one below!</p>';
+                return;
+            }
+
+            container.innerHTML = programs.map(p => `
+                <div class="program-list-item" data-program-id="${p.id}">
+                    <div class="program-color-preview" style="background-color: ${p.color}"></div>
+                    <span class="program-name">${escapeHtml(p.name)}</span>
+                    <button class="program-edit-btn" data-program-id="${p.id}">✏️</button>
+                    <button class="program-delete-btn" data-program-id="${p.id}">🗑️</button>
+                </div>
+            `).join('');
+
+            // Attach edit handlers
+            container.querySelectorAll('.program-edit-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const programId = this.dataset.programId;
+                    startEditingProgram(programId);
+                });
             });
 
-            document.getElementById('confirmImport').addEventListener('click', () => {
-                const json = textarea.value.trim();
-                if (!json) {
-                    alert('Please paste JSON data first.');
-                    return;
-                }
+            // Attach delete handlers
+            container.querySelectorAll('.program-delete-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const programId = this.dataset.programId;
+                    if (confirm('Delete this program? Cards will keep their content but lose this tag.')) {
+                        deleteProgram(programId);
+                    }
+                });
+            });
+        }
 
-                try {
-                    const state = JSON.parse(json);
-                    loadBoardState(state);
-                    saveToStorage();
-                    overlay.remove();
-                } catch (e) {
-                    alert('Invalid JSON format. Please check your data.');
+        // Start editing a program
+        function startEditingProgram(programId) {
+            const program = programs.find(p => p.id === programId);
+            if (!program) return;
+
+            const listItem = document.querySelector(`.program-list-item[data-program-id="${programId}"]`);
+            if (!listItem) return;
+
+            let editColor = program.color;
+
+            listItem.classList.add('editing');
+            listItem.innerHTML = `
+                <div class="program-color-preview" style="background-color: ${program.color}" data-edit-color></div>
+                <div class="program-edit-colors" id="editColors-${programId}">
+                    ${presetColors.map(c => `<div class="color-swatch" data-color="${c}" style="background-color: ${c}"></div>`).join('')}
+                </div>
+                <input type="text" class="program-name-input" value="${escapeHtml(program.name)}" maxlength="30">
+                <button class="program-save-btn">Save</button>
+            `;
+
+            const colorPreview = listItem.querySelector('[data-edit-color]');
+            const colorDropdown = listItem.querySelector(`#editColors-${programId}`);
+            const nameInput = listItem.querySelector('.program-name-input');
+            const saveBtn = listItem.querySelector('.program-save-btn');
+
+            nameInput.focus();
+            nameInput.select();
+
+            // Toggle color dropdown
+            colorPreview.addEventListener('click', function (e) {
+                e.stopPropagation();
+                colorDropdown.classList.toggle('show');
+            });
+
+            // Handle color selection
+            colorDropdown.querySelectorAll('.color-swatch').forEach(swatch => {
+                swatch.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    editColor = this.dataset.color;
+                    colorPreview.style.backgroundColor = editColor;
+                    colorDropdown.classList.remove('show');
+                });
+            });
+
+            // Save on button click
+            saveBtn.addEventListener('click', function () {
+                const newName = nameInput.value.trim();
+                if (newName) {
+                    updateProgram(programId, newName, editColor);
+                } else {
+                    renderProgramList(); // Cancel if empty
                 }
             });
 
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) {
-                    overlay.remove();
+            // Save on Enter
+            nameInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveBtn.click();
+                }
+                if (e.key === 'Escape') {
+                    renderProgramList(); // Cancel
                 }
             });
         }
+
+        // Update an existing program
+        function updateProgram(programId, newName, newColor) {
+            const program = programs.find(p => p.id === programId);
+            if (!program) return;
+
+            program.name = newName;
+            program.color = newColor;
+
+            // Update all cards with this program
+            document.querySelectorAll('.card').forEach(card => {
+                if (card.dataset.programId === programId && !card.classList.contains('editing')) {
+                    const tag = card.querySelector('.card-program-tag');
+                    if (tag) {
+                        tag.textContent = newName;
+                        tag.style.backgroundColor = newColor;
+                        tag.style.color = getContrastColor(newColor);
+                    }
+                }
+            });
+
+            renderProgramBar();
+            renderProgramList();
+            saveToStorage();
+        }
+
+        // Add a new program
+        function addProgram(name, color) {
+            const id = 'prog_' + Date.now();
+            programs.push({ id, name, color });
+            renderProgramBar();
+            renderProgramList();
+            saveToStorage(); // Force immediate save for programs
+        }
+
+        // Delete a program
+        function deleteProgram(programId) {
+            programs = programs.filter(p => p.id !== programId);
+
+            // Clear program from cards
+            document.querySelectorAll('.card').forEach(card => {
+                if (card.dataset.programId === programId) {
+                    card.dataset.programId = '';
+                    // Update card display if not editing
+                    if (!card.classList.contains('editing')) {
+                        const programTag = card.querySelector('.card-program-tag');
+                        if (programTag) programTag.remove();
+                    }
+                }
+            });
+
+            // Reset filter if deleted program was active
+            if (activeFilter === programId) {
+                activeFilter = '';
+            }
+
+            renderProgramBar();
+            renderProgramList();
+            applyFilter();
+            saveToStorage(); // Force immediate save for programs
+        }
+
+        // Show program modal
+        function showProgramModal() {
+            renderProgramList();
+            renderColorSwatches();
+            document.getElementById('newProgramName').value = '';
+            document.getElementById('programModal').classList.add('show');
+        }
+
+        // Hide program modal
+        function hideProgramModal() {
+            document.getElementById('programModal').classList.remove('show');
+        }
+
+        // Program modal event listeners
+        document.getElementById('addProgramBtn').addEventListener('click', showProgramModal);
+        document.getElementById('closeProgramModal').addEventListener('click', hideProgramModal);
+
+        document.getElementById('addProgramSubmit').addEventListener('click', function () {
+            const name = document.getElementById('newProgramName').value.trim();
+            if (name) {
+                addProgram(name, selectedColor);
+                document.getElementById('newProgramName').value = '';
+                // Reset to first color
+                selectedColor = presetColors[0];
+                renderColorSwatches();
+            }
+        });
+
+        document.getElementById('newProgramName').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('addProgramSubmit').click();
+            }
+        });
+
+        document.getElementById('programModal').addEventListener('click', function (e) {
+            if (e.target === this) hideProgramModal();
+        });
+
+        // Initialize program bar
+        renderProgramBar();
     </script>
 </body>
 
