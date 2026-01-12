@@ -19,6 +19,15 @@
             padding: 20px;
         }
 
+        body.dragging-active {
+            user-select: none;
+        }
+
+        body.dragging-active input,
+        body.dragging-active textarea {
+            user-select: text;
+        }
+
         h1 {
             text-align: center;
             margin-bottom: 8px;
@@ -867,12 +876,39 @@
     </div>
 
     <script>
+        const $ = (selector, root = document) => root.querySelector(selector);
+        const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+
         // Column definitions
         const columns = {
             'waiting-on-me': { name: 'Waiting on Me', color: 'yellow' },
             'waiting-on-others': { name: 'Waiting on Someone Else', color: 'blue' },
             'blocked': { name: 'Blocked', color: 'red' },
             'completed': { name: 'Completed', color: 'green' }
+        };
+
+        const STORAGE_KEY = 'task-tracker-data';
+        const HOLD_DELAY = 100; // ms to hold before drag starts
+
+        const dom = {
+            exportBtn: $('#exportBtn'),
+            importBtn: $('#importBtn'),
+            saveIndicator: $('#saveIndicator'),
+            importModal: $('#importModal'),
+            importTextarea: $('#importTextarea'),
+            cancelImport: $('#cancelImport'),
+            confirmImport: $('#confirmImport'),
+            clearCompletedBtn: $('#clearCompletedBtn'),
+            programTags: $('#programTags'),
+            programModal: $('#programModal'),
+            programList: $('#programList'),
+            addProgramBtn: $('#addProgramBtn'),
+            closeProgramModal: $('#closeProgramModal'),
+            addProgramSubmit: $('#addProgramSubmit'),
+            newProgramName: $('#newProgramName'),
+            colorPickerSelected: $('#colorPickerSelected'),
+            colorPickerDropdown: $('#colorPickerDropdown'),
+            colorSwatches: $('#colorSwatches')
         };
 
         // Programs list (will be loaded from storage)
@@ -890,31 +926,6 @@
             offsetX: 0,
             offsetY: 0
         };
-
-        const HOLD_DELAY = 100; // ms to hold before drag starts
-
-        // Initialize the board
-        document.addEventListener('DOMContentLoaded', function () {
-            // Add click handlers to "Add Card" buttons
-            document.querySelectorAll('.add-card-btn').forEach(btn => {
-                btn.addEventListener('click', function () {
-                    const column = this.closest('.column');
-                    const container = column.querySelector('.cards-container');
-                    // If filtered to a program, assign that program to new cards
-                    const programToAssign = activeFilter || null;
-                    const card = createCard('', '', true, null, null, programToAssign);
-                    container.appendChild(card);
-                    startEditing(card);
-                });
-            });
-
-            // Close context menu when clicking elsewhere
-            document.addEventListener('click', hideContextMenu);
-
-            // Global mouse move and up for dragging
-            document.addEventListener('mousemove', handleMouseMove);
-            document.addEventListener('mouseup', handleMouseUp);
-        });
 
         // Create a new card element
         function createCard(title, description, isNew = true, createdAt = null, updatedAt = null, programId = null) {
@@ -1000,6 +1011,7 @@
             card.addEventListener('mousedown', function (e) {
                 if (this.classList.contains('editing') || e.button !== 0) return;
 
+                e.preventDefault();
                 dragState.startX = e.clientX;
                 dragState.startY = e.clientY;
 
@@ -1033,6 +1045,7 @@
         function startDragging(card, e) {
             if (card.classList.contains('editing')) return;
 
+            document.body.classList.add('dragging-active');
             dragState.isDragging = true;
             dragState.card = card;
 
@@ -1086,6 +1099,8 @@
                 clearTimeout(dragState.holdTimer);
                 dragState.holdTimer = null;
             }
+
+            document.body.classList.remove('dragging-active');
 
             if (!dragState.isDragging || !dragState.card) return;
 
@@ -1276,13 +1291,6 @@
 
                 // Save after edit
                 scheduleSave();
-
-                // Re-attach click listener
-                card.addEventListener('click', function (e) {
-                    if (!this.classList.contains('editing')) {
-                        startEditing(this);
-                    }
-                });
             }
 
             // Save when clicking outside
@@ -1322,14 +1330,7 @@
             return div.innerHTML;
         }
 
-        // Initialize existing cards with all interactions
-        document.querySelectorAll('.card').forEach(card => {
-            setupCardInteractions(card);
-        });
-
         // ==================== PERSISTENCE ====================
-
-        const STORAGE_KEY = 'task-tracker-data';
 
         // Save board state to LocalStorage
         function saveToStorage() {
@@ -1340,27 +1341,12 @@
                 columns: {}
             };
 
-            document.querySelectorAll('.column').forEach(column => {
+            $$('.column').forEach(column => {
                 const columnId = column.dataset.column;
                 const cards = [];
 
                 column.querySelectorAll('.card').forEach(card => {
-                    const titleEl = card.querySelector('.card-title');
-                    const descEl = card.querySelector('.card-description');
-
-                    // Handle both editing and non-editing states
-                    let title, description;
-                    if (card.classList.contains('editing')) {
-                        title = card.querySelector('.card-title-input')?.value || '';
-                        description = card.querySelector('.card-description-input')?.value || '';
-                    } else {
-                        title = titleEl?.textContent || '';
-                        description = descEl?.textContent || '';
-                        // Clean up placeholder text
-                        if (title === 'New Task') title = '';
-                        if (description === 'Click to add description...') description = '';
-                    }
-
+                    const { title, description } = readCardText(card);
                     if (title || description) {
                         cards.push({
                             title,
@@ -1386,13 +1372,6 @@
 
             try {
                 const data = JSON.parse(stored);
-
-                // Load programs first
-                if (data.programs && Array.isArray(data.programs)) {
-                    programs = data.programs;
-                    renderProgramBar();
-                }
-
                 loadData(data);
             } catch (e) {
                 console.error('Failed to load saved data:', e);
@@ -1410,7 +1389,7 @@
             }
 
             // Clear existing cards
-            document.querySelectorAll('.cards-container').forEach(container => {
+            $$('.cards-container').forEach(container => {
                 container.innerHTML = '';
             });
 
@@ -1455,9 +1434,8 @@
 
         // Show save indicator
         function showSaveIndicator() {
-            const indicator = document.getElementById('saveIndicator');
-            indicator.classList.add('show');
-            setTimeout(() => indicator.classList.remove('show'), 1500);
+            dom.saveIndicator.classList.add('show');
+            setTimeout(() => dom.saveIndicator.classList.remove('show'), 1500);
         }
 
         // Export data as JSON file
@@ -1478,18 +1456,18 @@
 
         // Show import modal
         function showImportModal() {
-            document.getElementById('importTextarea').value = '';
-            document.getElementById('importModal').classList.add('show');
+            dom.importTextarea.value = '';
+            dom.importModal.classList.add('show');
         }
 
         // Hide import modal
         function hideImportModal() {
-            document.getElementById('importModal').classList.remove('show');
+            dom.importModal.classList.remove('show');
         }
 
         // Process import from textarea
         function processImport() {
-            const text = document.getElementById('importTextarea').value.trim();
+            const text = dom.importTextarea.value.trim();
             if (!text) {
                 alert('Please paste JSON data first');
                 return;
@@ -1515,15 +1493,15 @@
         }
 
         // Setup toolbar buttons
-        document.getElementById('exportBtn').addEventListener('click', exportData);
-        document.getElementById('importBtn').addEventListener('click', showImportModal);
-        document.getElementById('cancelImport').addEventListener('click', hideImportModal);
-        document.getElementById('confirmImport').addEventListener('click', processImport);
+        dom.exportBtn.addEventListener('click', exportData);
+        dom.importBtn.addEventListener('click', showImportModal);
+        dom.cancelImport.addEventListener('click', hideImportModal);
+        dom.confirmImport.addEventListener('click', processImport);
 
         // Clear completed button
-        document.getElementById('clearCompletedBtn').addEventListener('click', function (e) {
+        dom.clearCompletedBtn.addEventListener('click', function (e) {
             e.stopPropagation();
-            const completedContainer = document.querySelector('.column.completed .cards-container');
+            const completedContainer = $('.column.completed .cards-container');
             const cardCount = completedContainer.querySelectorAll('.card').length;
             if (cardCount === 0) return;
 
@@ -1534,7 +1512,7 @@
         });
 
         // Close modal on overlay click
-        document.getElementById('importModal').addEventListener('click', function (e) {
+        dom.importModal.addEventListener('click', function (e) {
             if (e.target === this) hideImportModal();
         });
 
@@ -1544,22 +1522,11 @@
         // Get current board state as a string for comparison
         function getBoardState() {
             const state = {};
-            document.querySelectorAll('.column').forEach(column => {
+            $$('.column').forEach(column => {
                 const columnId = column.dataset.column;
                 const cards = [];
                 column.querySelectorAll('.card').forEach(card => {
-                    const titleEl = card.querySelector('.card-title');
-                    const descEl = card.querySelector('.card-description');
-                    let title, description;
-                    if (card.classList.contains('editing')) {
-                        title = card.querySelector('.card-title-input')?.value || '';
-                        description = card.querySelector('.card-description-input')?.value || '';
-                    } else {
-                        title = titleEl?.textContent || '';
-                        description = descEl?.textContent || '';
-                        if (title === 'New Task') title = '';
-                        if (description === 'Click to add description...') description = '';
-                    }
+                    const { title, description } = readCardText(card);
                     if (title || description) {
                         cards.push({ title, description, programId: card.dataset.programId || '' });
                     }
@@ -1581,12 +1548,6 @@
                 }
             }, 300);
         }
-
-        // Load saved data on startup
-        loadFromStorage();
-
-        // Initialize last saved state after loading
-        lastSavedState = getBoardState();
 
         // ==================== PROGRAMS ====================
 
@@ -1617,9 +1578,9 @@
 
         // Render color swatches in dropdown
         function renderColorSwatches() {
-            const container = document.getElementById('colorSwatches');
-            const selectedBtn = document.getElementById('colorPickerSelected');
-            const dropdown = document.getElementById('colorPickerDropdown');
+            const container = dom.colorSwatches;
+            const selectedBtn = dom.colorPickerSelected;
+            const dropdown = dom.colorPickerDropdown;
 
             // Set initial selected color display
             selectedBtn.style.backgroundColor = selectedColor;
@@ -1650,12 +1611,12 @@
 
         // Close color picker dropdown when clicking outside
         document.addEventListener('click', function () {
-            document.getElementById('colorPickerDropdown')?.classList.remove('show');
+            dom.colorPickerDropdown?.classList.remove('show');
         });
 
         // Render program bar (filter buttons)
         function renderProgramBar() {
-            const container = document.getElementById('programTags');
+            const container = dom.programTags;
             container.innerHTML = `
                 <button class="program-tag-btn all-filter ${activeFilter === '' ? 'active' : ''}" data-program="">All</button>
                 ${programs.map(p => {
@@ -1679,7 +1640,7 @@
 
         // Apply filter to all cards
         function applyFilter() {
-            document.querySelectorAll('.card').forEach(card => {
+            $$('.card').forEach(card => {
                 applyFilterToCard(card);
             });
         }
@@ -1699,7 +1660,7 @@
 
         // Render program list in modal
         function renderProgramList() {
-            const container = document.getElementById('programList');
+            const container = dom.programList;
             if (programs.length === 0) {
                 container.innerHTML = '<p style="color: #888; font-size: 13px;">No programs yet. Add one below!</p>';
                 return;
@@ -1808,7 +1769,7 @@
             program.color = newColor;
 
             // Update all cards with this program
-            document.querySelectorAll('.card').forEach(card => {
+            $$('.card').forEach(card => {
                 if (card.dataset.programId === programId && !card.classList.contains('editing')) {
                     const tag = card.querySelector('.card-program-tag');
                     if (tag) {
@@ -1838,7 +1799,7 @@
             programs = programs.filter(p => p.id !== programId);
 
             // Clear program from cards
-            document.querySelectorAll('.card').forEach(card => {
+            $$('.card').forEach(card => {
                 if (card.dataset.programId === programId) {
                     card.dataset.programId = '';
                     // Update card display if not editing
@@ -1864,43 +1825,81 @@
         function showProgramModal() {
             renderProgramList();
             renderColorSwatches();
-            document.getElementById('newProgramName').value = '';
-            document.getElementById('programModal').classList.add('show');
+            dom.newProgramName.value = '';
+            dom.programModal.classList.add('show');
         }
 
         // Hide program modal
         function hideProgramModal() {
-            document.getElementById('programModal').classList.remove('show');
+            dom.programModal.classList.remove('show');
         }
 
         // Program modal event listeners
-        document.getElementById('addProgramBtn').addEventListener('click', showProgramModal);
-        document.getElementById('closeProgramModal').addEventListener('click', hideProgramModal);
+        dom.addProgramBtn.addEventListener('click', showProgramModal);
+        dom.closeProgramModal.addEventListener('click', hideProgramModal);
 
-        document.getElementById('addProgramSubmit').addEventListener('click', function () {
-            const name = document.getElementById('newProgramName').value.trim();
+        dom.addProgramSubmit.addEventListener('click', function () {
+            const name = dom.newProgramName.value.trim();
             if (name) {
                 addProgram(name, selectedColor);
-                document.getElementById('newProgramName').value = '';
+                dom.newProgramName.value = '';
                 // Reset to first color
                 selectedColor = presetColors[0];
                 renderColorSwatches();
             }
         });
 
-        document.getElementById('newProgramName').addEventListener('keydown', function (e) {
+        dom.newProgramName.addEventListener('keydown', function (e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                document.getElementById('addProgramSubmit').click();
+                dom.addProgramSubmit.click();
             }
         });
 
-        document.getElementById('programModal').addEventListener('click', function (e) {
+        dom.programModal.addEventListener('click', function (e) {
             if (e.target === this) hideProgramModal();
         });
 
+        function readCardText(card) {
+            let title = '';
+            let description = '';
+            if (card.classList.contains('editing')) {
+                title = card.querySelector('.card-title-input')?.value || '';
+                description = card.querySelector('.card-description-input')?.value || '';
+            } else {
+                const titleEl = card.querySelector('.card-title');
+                const descEl = card.querySelector('.card-description');
+                title = titleEl?.textContent || '';
+                description = descEl?.textContent || '';
+                if (title === 'New Task') title = '';
+                if (description === 'Click to add description...') description = '';
+            }
+            return { title, description };
+        }
+
+        function initBoard() {
+            $$('.add-card-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const column = this.closest('.column');
+                    const container = column.querySelector('.cards-container');
+                    const programToAssign = activeFilter || null;
+                    const card = createCard('', '', true, null, null, programToAssign);
+                    container.appendChild(card);
+                    startEditing(card);
+                });
+            });
+
+            document.addEventListener('click', hideContextMenu);
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+
+            loadFromStorage();
+            lastSavedState = getBoardState();
+            renderProgramBar();
+        }
+
         // Initialize program bar
-        renderProgramBar();
+        initBoard();
     </script>
 </body>
 
